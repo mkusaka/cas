@@ -1,0 +1,15 @@
+[package]
+name = "cas"
+version = "0.0.1"
+edition = "2024"
+description = "Recursively link CLAUDE.md to AGENTS.md"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/mkusaka/cas"
+homepage = "https://github.com/mkusaka/cas"
+documentation = "https://github.com/mkusaka/cas"
+keywords = ["cli", "agents", "claude", "symlink"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+jwalk = "0.8.1"
