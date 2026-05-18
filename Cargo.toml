@@ -1,6 +1,6 @@
 [package]
 name = "cas"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 description = "Recursively sync Claude agent files to Codex-compatible paths"
 license = "MIT"
