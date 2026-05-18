@@ -7,7 +7,7 @@ fn homebrew_formula_template_has_required_release_placeholders() {
 
     assert!(template.contains("class Cas < Formula"));
     assert!(template.contains("system \"cargo\", \"install\", *std_cargo_args"));
-    assert!(template.contains("assert_match \"Recursively create AGENTS.md\""));
+    assert!(template.contains("assert_match \".claude/skills\""));
 
     for placeholder in [
         "__SOURCE_URL__",

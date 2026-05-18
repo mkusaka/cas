@@ -1,5 +1,5 @@
 class Cas < Formula
-  desc "Recursively link CLAUDE.md to AGENTS.md"
+  desc "Recursively sync Claude agent files to Codex-compatible paths"
   homepage "https://github.com/mkusaka/cas"
   # Release automation replaces these placeholders after the first tagged release.
   url "__SOURCE_URL__"
@@ -23,6 +23,6 @@ class Cas < Formula
   end
 
   test do
-    assert_match "Recursively create AGENTS.md", shell_output("#{bin}/cas --help")
+    assert_match ".claude/skills", shell_output("#{bin}/cas --help")
   end
 end

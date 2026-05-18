@@ -1,17 +1,20 @@
 # cas
 
-`cas` recursively creates `AGENTS.md` symlinks next to existing `CLAUDE.md`
-files.
+`cas` recursively syncs Claude agent files into Codex-compatible paths.
 
 It is intended for repositories that already keep agent instructions in
-`CLAUDE.md` and want Codex-compatible `AGENTS.md` files without duplicating
-content.
+`CLAUDE.md` and `.claude/skills`, and want Codex-compatible paths without
+duplicating content.
 
 ## Behavior
 
 - Scans the target directory recursively.
 - Creates `AGENTS.md -> CLAUDE.md` in each directory that contains `CLAUDE.md`.
-- Skips a directory when `AGENTS.md` already exists.
+- Creates `.agents/skills -> ../.claude/skills` in each directory that contains
+  `.claude/skills`.
+- Skips a target when `AGENTS.md` or `.agents/skills` already exists.
+- Skips `.agents/skills` when `.agents` already exists but is not a plain
+  directory.
 - Never overwrites existing files or symlinks.
 - Includes hidden directories in the scan.
 

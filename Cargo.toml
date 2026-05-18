@@ -2,7 +2,7 @@
 name = "cas"
 version = "0.0.1"
 edition = "2024"
-description = "Recursively link CLAUDE.md to AGENTS.md"
+description = "Recursively sync Claude agent files to Codex-compatible paths"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/mkusaka/cas"

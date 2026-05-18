@@ -54,6 +54,6 @@ fn run() -> Result<i32, String> {
 
 fn usage(program: &str) -> String {
     format!(
-        "Usage: {program} <directory>\n\nRecursively create AGENTS.md symlinks pointing to CLAUDE.md."
+        "Usage: {program} <directory>\n\nRecursively create AGENTS.md symlinks and sync .claude/skills to .agents/skills."
     )
 }
