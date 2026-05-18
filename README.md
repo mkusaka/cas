@@ -62,8 +62,8 @@ cargo test --locked
 Pushing a `v*` tag runs the release workflow. It validates the tag against
 `Cargo.toml`, creates a GitHub Release, builds Homebrew bottles for Apple
 Silicon and Intel Macs on macOS 15 and 26, and updates
-`mkusaka/homebrew-tap`. The workflow requires the `HOMEBREW_TAP_TOKEN`
-repository secret.
+`mkusaka/homebrew-tap` when the `HOMEBREW_TAP_TOKEN` repository secret is
+configured.
 
 ```sh
 git tag vX.Y.Z

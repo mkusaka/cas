@@ -51,15 +51,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Validate release configuration
-        env:
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        run: |
-          if [[ -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
-            echo "::error::Missing required secret: HOMEBREW_TAP_TOKEN"
-            exit 1
-          fi
-
       - name: Set formula metadata
         id: formula
         run: |
@@ -264,7 +255,21 @@ jobs:
           pattern: bottle-metadata-*
           merge-multiple: true
 
+      - name: Check Homebrew tap token
+        id: tap_token
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [[ -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
+            echo "::notice::Skipping Homebrew tap update because HOMEBREW_TAP_TOKEN is not configured"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
       - name: Clone Homebrew tap
+        if: steps.tap_token.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
@@ -272,6 +277,7 @@ jobs:
           git -C homebrew-tap remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/mkusaka/homebrew-tap.git"
 
       - name: Render tap formula
+        if: steps.tap_token.outputs.available == 'true'
         env:
           FORMULA_NAME: ${{ needs.release.outputs.formula_name }}
           REPOSITORY_NAME: ${{ github.repository }}
@@ -341,6 +347,7 @@ jobs:
           cat "$FORMULA_PATH"
 
       - name: Commit and push tap update
+        if: steps.tap_token.outputs.available == 'true'
         env:
           FORMULA_NAME: ${{ needs.release.outputs.formula_name }}
           VERSION: ${{ needs.release.outputs.version }}
