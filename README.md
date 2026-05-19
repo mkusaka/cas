@@ -21,13 +21,15 @@ duplicating content.
 ## Usage
 
 ```sh
-cas <directory>
+cas [directory]
 ```
+
+If `directory` is omitted, `cas` scans the current directory.
 
 Example:
 
 ```sh
-cas .
+cas
 ```
 
 Output:

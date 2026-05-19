@@ -35,9 +35,25 @@ fn prints_help() {
     let output = run_cas(["--help"]);
 
     assert_success(&output);
-    assert!(stdout(&output).contains("Usage: cas <directory>"));
+    assert!(stdout(&output).contains("Usage: cas [directory]"));
     assert!(stdout(&output).contains("Recursively create AGENTS.md"));
     assert!(stdout(&output).contains(".claude/skills"));
+    assert!(stdout(&output).contains("Defaults to the current directory"));
+}
+
+#[test]
+fn defaults_to_current_directory() {
+    let temp = TempDir::new("current-dir");
+    fs::write(temp.path().join("CLAUDE.md"), "instructions").expect("CLAUDE.md should be written");
+
+    let output = run_cas_in(temp.path(), std::iter::empty::<&str>());
+
+    assert_success(&output);
+    assert!(stdout(&output).contains("created: 1, skipped: 0"));
+    assert_eq!(
+        fs::read_link(temp.path().join("AGENTS.md")).expect("AGENTS.md should be a symlink"),
+        PathBuf::from("CLAUDE.md")
+    );
 }
 
 #[test]
@@ -86,10 +102,29 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<std::ffi::OsStr>,
 {
-    Command::new(env!("CARGO_BIN_EXE_cas"))
-        .args(args)
+    run_cas_command(args)
         .output()
         .expect("cas command should run")
+}
+
+fn run_cas_in<I, S>(current_dir: &Path, args: I) -> Output
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
+{
+    let mut command = run_cas_command(args);
+    command.current_dir(current_dir);
+    command.output().expect("cas command should run")
+}
+
+fn run_cas_command<I, S>(args: I) -> Command
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
+{
+    let mut command = Command::new(env!("CARGO_BIN_EXE_cas"));
+    command.args(args);
+    command
 }
 
 fn assert_success(output: &Output) {

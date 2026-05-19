@@ -23,12 +23,9 @@ fn run() -> Result<i32, String> {
         .and_then(|arg| arg.into_string().ok())
         .unwrap_or_else(|| "cas".to_string());
 
-    let Some(root) = args.next() else {
-        eprintln!("{}", usage(&program));
-        return Ok(2);
-    };
+    let root = args.next();
 
-    if root == OsStr::new("-h") || root == OsStr::new("--help") {
+    if root.as_deref() == Some(OsStr::new("-h")) || root.as_deref() == Some(OsStr::new("--help")) {
         println!("{}", usage(&program));
         return Ok(0);
     }
@@ -38,7 +35,8 @@ fn run() -> Result<i32, String> {
         return Ok(2);
     }
 
-    let report = sync_agents(PathBuf::from(root)).map_err(|error| error.to_string())?;
+    let report = sync_agents(root.map_or_else(|| PathBuf::from("."), PathBuf::from))
+        .map_err(|error| error.to_string())?;
 
     println!(
         "created: {}, skipped: {}",
@@ -54,6 +52,6 @@ fn run() -> Result<i32, String> {
 
 fn usage(program: &str) -> String {
     format!(
-        "Usage: {program} <directory>\n\nRecursively create AGENTS.md symlinks and sync .claude/skills to .agents/skills."
+        "Usage: {program} [directory]\n\nRecursively create AGENTS.md symlinks and sync .claude/skills to .agents/skills. Defaults to the current directory."
     )
 }
