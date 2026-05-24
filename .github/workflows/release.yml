@@ -1,40 +1,33 @@
 name: Release
-
 on:
   push:
     tags:
       - "v*"
-
 permissions: {}
-
 jobs:
   verify:
     name: Verify
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    permissions: {}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
+        with:
+          persist-credentials: false
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
           toolchain: stable
           components: rustfmt, clippy
-
       - name: Run rustfmt
         run: cargo fmt --all -- --check
-
       - name: Run clippy
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
-
       - name: Run tests
         run: cargo test --locked
-
       - name: Verify package
         run: cargo package --locked --no-verify
-
+    timeout-minutes: 90
   release:
     name: Create Release
     needs: verify
@@ -50,12 +43,12 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
+        with:
+          persist-credentials: false
       - name: Set formula metadata
         id: formula
         run: |
           echo "formula_name=cas" >> "$GITHUB_OUTPUT"
-
       - name: Validate tag version
         id: version
         run: |
@@ -75,7 +68,6 @@ jobs:
           echo "VERSION=$TAG_VERSION" >> "$GITHUB_ENV"
           echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
           echo "release_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-
       - name: Create GitHub release (draft)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,7 +82,6 @@ jobs:
             --verify-tag \
             --title "cas $GITHUB_REF_NAME" \
             --generate-notes
-
       - name: Compute source archive SHA256
         id: source_archive
         run: |
@@ -103,7 +94,7 @@ jobs:
           echo "SHA256=$SHA256" >> "$GITHUB_ENV"
           echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
           echo "url=$SOURCE_URL" >> "$GITHUB_OUTPUT"
-
+    timeout-minutes: 90
   bottle:
     name: Build Bottle (${{ matrix.label }})
     needs: release
@@ -129,14 +120,14 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
+        with:
+          persist-credentials: false
       - name: Clone Homebrew tap
         run: |
           TAP_DIR="$(brew --repository)/Library/Taps/mkusaka/homebrew-tap"
           mkdir -p "$(dirname "$TAP_DIR")"
           rm -rf "$TAP_DIR"
           git clone https://github.com/mkusaka/homebrew-tap "$TAP_DIR"
-
       - name: Render formula for release
         env:
           FORMULA_NAME: ${{ needs.release.outputs.formula_name }}
@@ -177,7 +168,6 @@ jobs:
           RUBY
 
           cat "$FORMULA_PATH"
-
       - name: Build bottle
         env:
           FORMULA_NAME: ${{ needs.release.outputs.formula_name }}
@@ -211,19 +201,17 @@ jobs:
             "file": "${UPLOAD_FILE}"
           }
           EOF
-
       - name: Upload bottle to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "$GITHUB_REF_NAME" "$UPLOAD_FILE" --clobber
-
       - name: Upload bottle metadata
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bottle-metadata-${{ matrix.bottle_tag }}
           path: bottle-metadata-${{ matrix.bottle_tag }}.json
-
+    timeout-minutes: 90
   publish:
     name: Publish Release
     needs: [release, bottle]
@@ -236,25 +224,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release edit "$GITHUB_REF_NAME" --draft=false --repo "$GITHUB_REPOSITORY"
-
+    timeout-minutes: 90
   update_homebrew_tap:
     name: Update Homebrew Tap
     needs: [release, bottle, publish]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    permissions: {}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-
       - name: Download bottle metadata
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: bottle-metadata-*
           merge-multiple: true
-
       - name: Check Homebrew tap token
         id: tap_token
         env:
@@ -267,7 +252,6 @@ jobs:
           fi
 
           echo "available=true" >> "$GITHUB_OUTPUT"
-
       - name: Clone Homebrew tap
         if: steps.tap_token.outputs.available == 'true'
         env:
@@ -275,7 +259,6 @@ jobs:
         run: |
           gh repo clone mkusaka/homebrew-tap homebrew-tap
           git -C homebrew-tap remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/mkusaka/homebrew-tap.git"
-
       - name: Render tap formula
         if: steps.tap_token.outputs.available == 'true'
         env:
@@ -345,7 +328,6 @@ jobs:
 
           ruby -c "$FORMULA_PATH"
           cat "$FORMULA_PATH"
-
       - name: Commit and push tap update
         if: steps.tap_token.outputs.available == 'true'
         env:
@@ -358,3 +340,5 @@ jobs:
           git -C homebrew-tap diff --cached --quiet && echo "No changes" && exit 0
           git -C homebrew-tap commit -m "bump ${FORMULA_NAME} to ${VERSION}"
           git -C homebrew-tap push origin HEAD:main
+    timeout-minutes: 90
+    environment: release
