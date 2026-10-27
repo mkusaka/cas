@@ -3,6 +3,9 @@ on:
   push:
     tags:
       - "v*"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 permissions: {}
 jobs:
   verify:
@@ -84,6 +87,7 @@ jobs:
             --generate-notes
       - name: Compute source archive SHA256
         id: source_archive
+        shell: bash
         run: |
           SOURCE_ARCHIVE="cas-${VERSION}.tar.gz"
           SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
@@ -174,6 +178,7 @@ jobs:
           BOTTLE_TAG: ${{ matrix.bottle_tag }}
           HOMEBREW_NO_INSTALL_FROM_API: "1"
           VERSION: ${{ needs.release.outputs.version }}
+        shell: bash
         run: |
           HOMEBREW_NO_AUTO_UPDATE=1 brew install --build-bottle "mkusaka/tap/${FORMULA_NAME}"
           HOMEBREW_NO_AUTO_UPDATE=1 brew bottle --no-rebuild --root-url "${{ needs.release.outputs.release_url }}" "mkusaka/tap/${FORMULA_NAME}"
